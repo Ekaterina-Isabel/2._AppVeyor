@@ -201,3 +201,88 @@ AppVeyor предоставляет бесплатный тарифный пла
 ![image](https://user-images.githubusercontent.com/79922872/172035145-e3552c2a-22c4-439e-9ea1-d3bbe4827213.png)
 
 **Важно: убедитесь, что вы не скопировали бейджик с другого проекта! За такую "хитрость" ДЗ будет отправляться на доработку!**
+
+## Задача №2 - JSON Schema
+
+JSON Schema предлагает нам инструмент валидации JSON-документов. С описанием вы можете познакомиться по этому адресу: https://json-schema.org/understanding-json-schema/index.html
+
+Как строится схема: 
+```js
+{
+  "$schema": "http://json-schema.org/draft-07/schema", // версия схемы: https://json-schema.org/understanding-json-schema/reference/schema.html
+  "type": "array", // тип корневого элемента: https://json-schema.org/understanding-json-schema/reference/type.html
+  "items": { // какие элементы допустимы внутри массива: https://json-schema.org/understanding-json-schema/reference/array.html#items
+    "type": "object", // должны быть объектами: https://json-schema.org/understanding-json-schema/reference/object.html
+    "required": [ // должны содержать следующие поля: https://json-schema.org/understanding-json-schema/reference/object.html#required-properties
+      "id",
+      "name",
+      "number",
+      "balance",
+      "currency"
+    ],
+    "additionalProperties": false, // дополнительных полей быть не должно 
+    "properties": { // описание полей: https://json-schema.org/understanding-json-schema/reference/object.html#properties
+      "id": {
+        "type": "integer" // целое число: https://json-schema.org/understanding-json-schema/reference/numeric.html#integer
+      },
+      "name": {
+        "type": "string", // строка: https://json-schema.org/understanding-json-schema/reference/string.html
+        "minLength": 1 // минимальная длина - 1: https://json-schema.org/understanding-json-schema/reference/string.html#length
+      },
+      "number": {
+        "type": "string", // строка: https://json-schema.org/understanding-json-schema/reference/string.html
+        "pattern": "^•• \\d{4}$" // соответствует регулярному выражению: https://json-schema.org/understanding-json-schema/reference/string.html#regular-expressions
+      },
+      "balance": {
+        "type": "integer" // целое число: https://json-schema.org/understanding-json-schema/reference/numeric.html#integer
+      },
+      "currency": {
+        "type": "string" // строка: https://json-schema.org/understanding-json-schema/reference/string.html
+      }
+    }
+  }
+}
+```
+
+Что нужно сделать:
+
+#### Шаг 1. Добавить зависимость
+
+```groovy
+dependencies {
+    testImplementation 'io.rest-assured:rest-assured:4.3.0'
+    testImplementation 'io.rest-assured:json-schema-validator:4.3.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.1'
+}
+```
+
+#### Шаг 2. Сохраните схему в ресурсах
+
+Создайте каталог `resources` в `src/test` и поместите туда схему (не забудьте удалить комментарии):
+
+![image](https://user-images.githubusercontent.com/79922872/172035286-42cc0482-ccbd-4dab-875d-69fb9a15f3fc.png)
+
+#### Шаг 3. Включить проверку схемы
+
+Модифицируйте существующий тест так, чтобы он проверял соответствие схеме. Для этого:
+
+```java
+      // код теста
+      .then()
+          .statusCode(200)
+          // static import для JsonSchemaValidator.matchesJsonSchemaInClasspath
+          .body(matchesJsonSchemaInClasspath("accounts.schema.json"))
+      ;
+```
+
+Удостоверьтесь, что тесты проходят при соответствии ответа схеме и падают, если вы поменяете что-то в схеме (например, тип для `id`)
+
+#### Шаг 4. Доработать схему
+
+Изучите документацию на тип [`object`](https://json-schema.org/understanding-json-schema/reference/object.html) и найдите способ валидации значения поля на два из возможных значения: "RUB" или "USD".
+
+Доработайте схему соответствующим образом, удостоверьтесь, что тесты проходят (в том числе в CI).
+
+Поменяйте "RUB" на "RUR" и удостоверьтесь, что тесты падают (в том числе в CI).
+
+Пришлите на проверку ссылку на ваш репозиторий (удостоверьтесь, что в истории сборки были как Success, так и Fail, иначе будет не видно, как вы проверяли, что сборка падает в CI).
